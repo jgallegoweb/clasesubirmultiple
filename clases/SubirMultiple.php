@@ -8,7 +8,7 @@
 
 /**
  * Description of SubirMultiple
- * @version 0.1
+ * @version 0.2
  * @author Javier Gallego
  * @license http://URL sin licencia
  * @copyright (c) 2014, Javier Gallego
@@ -18,6 +18,7 @@
 class SubirMultiple {
     
     private $inputname, $tamMax, $tamMaxTotal, $extensiones, $tipos, $accion, $destino, $crearCarpeta;
+    private $cantidadMax, $accionExcede;
     private $error, $errorPHP;
     
     const NO_ERROR = 0;
@@ -37,7 +38,6 @@ class SubirMultiple {
     }
     private function isExtension($extension){
         if (sizeof($this->extensiones) > 0 && !in_array($extension, $this->extensiones)) {
-            //ERROR
             return false;
         }
         return true;
@@ -50,7 +50,7 @@ class SubirMultiple {
         }
     }
     public function setExtension($ext){
-        if(is_array($var)){
+        if(is_array($var)){ //alta probabilidad de error
             $this->extensiones = $ext;
         }else{
             unset($this->extensiones);
@@ -64,9 +64,22 @@ class SubirMultiple {
             $this->tipos[] = $tipo;
         }
     }
-    /************************************** metodo isTipo ************************************/
+    public function setTipo($tipo){
+        if(is_array($tipo)){
+            $this->tipos = $tipo;
+        }else{
+            unset($this->tipos);
+            $this->extensiones[] = $tipo;
+        }
+    }
+    private function isTipo($tipo){
+        if (sizeof($this->tipos) > 0 && !in_array($tipo, $this->tipos)) {
+            return false;
+        }
+        return true;
+    }
     public function setAcccion($accion){
-        if($accion==0){
+        if($accion==0){//usar las variables directamente?
             $this->accion = SubirMultiple::OMITIR;
         }elseif($accion==1){
             $this->accion = SubirMultiple::RENOMBRAR;
@@ -103,6 +116,30 @@ class SubirMultiple {
             return false;
         }
     }
+    public function setCantidadMaxima($cantidad){
+        $this->cantidadMax = $cantidad;
+    }
+    public function getCantidadMaxima(){ //metodo publico??
+        return $this->cantidadMax;
+    }
+    private function isCantidad($subidos){
+        if($this->cantidadMax!=NULL && $this->cantidadMax < $subidos){
+            return false;
+        }
+        return true; 
+    }
+    public function setAccionExcede($accion){
+        $this->accionExcede = $accion;
+        return true;
+    }
+    
+    /*set nombre comun a la subida
+     *funcion setmultiplicidad
+     * isMultiple
+     * getcantidad subida
+     * gettamaniototal
+     * 
+     */
     public function subir(){
         $archivos = $_FILES[$this->inputname];
         $i=-1;
@@ -121,7 +158,7 @@ class SubirMultiple {
                 move_uploaded_file($origen, $this->destino.$nombre.".".$extension);
             }elseif($this->accion == SubirMultiple::RENOMBRAR){
                 $x=1;
-                $destino = $this->destino . $nombre . $extension;
+                $destino = $this->destino . $nombre .".". $extension;
                 while (file_exists($destino)) {
                     $destino = $this->destino . $nombre . "($x)." . $extension;
                     $x++;
@@ -130,7 +167,7 @@ class SubirMultiple {
             }elseif($this->accion == SubirMultiple::OMITIR){
                 $destino = $this->destino.$nombre.".".$extension;
                 if (file_exists($destino)) {
-                continue;
+                    continue;
                 }
                 move_uploaded_file($origen, $destino);
             }

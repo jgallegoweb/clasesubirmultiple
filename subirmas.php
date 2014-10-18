@@ -14,7 +14,7 @@ and open the template in the editor.
             require_once 'clases/SubirMultiple.php';
             
             $subir = new SubirMultiple("ficheros");
-            $subir->addExtension("zip");
+            $subir->addExtension("jpg");
             $subir->setAcccion(1);
             $subir->subir();
             /*$archivos = $_FILES['ficheros'];
