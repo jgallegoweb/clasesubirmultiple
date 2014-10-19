@@ -14,9 +14,16 @@ and open the template in the editor.
             require_once 'clases/SubirMultiple.php';
             
             $subir = new SubirMultiple("ficheros");
-            $subir->addExtension("jpg");
+            $subir->addExtension("txt");
+            $subir->addExtension("jpg"); //no funcionan los archivos .jpg
+            $subir->addExtension("png");
             $subir->setAcccion(1);
+            $subir->setAccionExcede(1);
+            $subir->setCrearCarpeta(true);
+            $subir->setDestino("carpetita");
+            $subir->setCantidadMaxima(2);
             $subir->subir();
+            echo "<br /> error_".$subir->getError();
             /*$archivos = $_FILES['ficheros'];
             $tope=  count($archivos['name']);
             echo $tope;
