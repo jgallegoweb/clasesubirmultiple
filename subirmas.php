@@ -21,8 +21,8 @@ and open the template in the editor.
             $subir->setAccionExcede(1);
             $subir->setCrearCarpeta(true);
             $subir->setDestino("carpetita");
-            $subir->setCantidadMaxima(2);
             $subir->subir();
+            $subir->getErrores();
             echo "<br /> error_".$subir->getError();
             /*$archivos = $_FILES['ficheros'];
             $tope=  count($archivos['name']);

@@ -8,7 +8,7 @@
 
 /**
  * Description of SubirMultiple
- * @version 0.4
+ * @version 0.6
  * @author Javier Gallego
  * @license http://URL sin licencia
  * @copyright (c) 2014, Javier Gallego
@@ -18,17 +18,17 @@
 class SubirMultiple {
     private $inputname, $tamMax, $tamMaxTotal, $extensiones, $tipos, $accion, $destino, $crearCarpeta;
     private $cantidadMax, $accionExcede;
-    private $error, $errorPHP;
+    private $error, $errorPHP, $listaErrores;
     
     const NO_ERROR = 0, ERROR_TAM_TOTAL = 1, ERROR_NUM_MAX = 2, ERROR_EXT = 3, 
             ERROR_TIPO = 4, ERROR_TAM = 5, ERROR_SUBIDA = 6, ERROR_CREAR_FALSE = 7, 
-            ERROR_SIN_CARPETA = 8;
+            ERROR_SIN_CARPETA = 8, ERROR_OMISION = 9;
     const OMITIR = 0, RENOMBRAR = 1, REEMPLAZAR = 2;
     const OMITIR_TODO = 0, SUBIR_PARTE = 1;
     
     function __construct($nombreinput) {
         $this->inputname = $nombreinput;
-        $this->tamMax = 512*1024;
+        $this->tamMax = 1024*1024*2;
         $this->tamMaxTotal = $this->tamMax*10;
         $this->extensiones = Array();
         $this->tipos = Array();
@@ -39,6 +39,7 @@ class SubirMultiple {
         $this->errorPHP = UPLOAD_ERR_OK;
         $this->accionExcede = SubirMultiple::OMITIR_TODO;
         $this->cantidadMax = 10;
+        $this->listaErrores = Array();
     }
     private function isExtension($extension){
         if (sizeof($this->extensiones) > 0 && !in_array($extension, $this->extensiones)) {
@@ -54,7 +55,7 @@ class SubirMultiple {
         }
     }
     public function setExtension($ext){
-        if(is_array($ext)){ //alta probabilidad de error
+        if(is_array($ext)){
             $this->extensiones = $ext;
         }else{
             unset($this->extensiones);
@@ -95,17 +96,15 @@ class SubirMultiple {
         return true;
     }
     private function crearCarpeta(){ 
-        echo "llama al metodo";
         if($this->crearCarpeta){
             if(mkdir($this->destino , 0774, true)){ //pork no funcionan la clase configuracion??
-                echo "creada";
                 return true;
             }else{
-                echo "no creada";
                 return false;
             }
         }
         $this->error = SubirMultiple::ERROR_CREAR_FALSE;
+        $this->listaErrores['carpeta'] = SubirMultiple::ERROR_CREAR_FALSE;
         return false;
     }
     public function setCrearCarpeta($var){
@@ -169,10 +168,43 @@ class SubirMultiple {
     public function getError(){
         return $this->error;
     }
+    public function getErrores(){
+        echo "Resultado de la subida: <br />";
+        foreach ($this->listaErrores as $key => $value) {
+            echo $key." --- ".$this->getMensajeError($value);
+            echo "<br />";
+        }
+    }
+    public function getMensajeError($codigoerror){
+        switch($codigoerror){
+            case SubirMultiple::NO_ERROR:
+                return "No se han detectado errores";
+            case SubirMultiple::ERROR_TAM_TOTAL:
+                return "Se ha sobrepasado el tamaño total permitido: ".$this->tamMaxTotal;
+            case SubirMultiple::ERROR_NUM_MAX:
+                return "Se ha sobrepasado el número máximo de archivos: ".$this->cantidadMax;
+            case SubirMultiple::ERROR_EXT:
+                return "Extensión no permitida";
+            case SubirMultiple::ERROR_TIPO:
+                return "Tipo MIME no permitido";
+            case SubirMultiple::ERROR_TAM:
+                return "Archivo demasiado grande";
+            case SubirMultiple::ERROR_SUBIDA:
+                return "Ha fallado la subida del archivo";
+            case SubirMultiple::ERROR_CREAR_FALSE:
+                return "No se ha creado el directorio";
+            case SubirMultiple::ERROR_SIN_CARPETA:
+                return "No se ha encontrado la carpeta de destino";
+            case SubirMultiple::ERROR_OMISION:
+                return "El archivo ya existe en el directorio y se ha omitido su subida";
+            default:
+                return "Error desconocido";
+        }
+         
+    }
     /*
      * set nombre comun a la subida???
-     * crear un array con todos los errores de cada archivo?
-     * 
+     * numeros por defecto sin inicializar
      * 
      */
     public function subir(){
@@ -180,34 +212,34 @@ class SubirMultiple {
         if($this->accionExcede == SubirMultiple::OMITIR_TODO){
             if(!$this->isCantidad()){
                 $this->error = SubirMultiple::ERROR_NUM_MAX;
+                $this->listaErrores['subida'] = SubirMultiple::ERROR_NUM_MAX;
                 return false;
             }
             if(!$this->isTamanioTotal()){
                 $this->error = SubirMultiple::ERROR_TAM_TOTAL;
+                $this->listaErrores['subida'] = SubirMultiple::ERROR_TAM_TOTAL;
                 return false;
             }
-            //comprobar todas la extensiones y tipos?
         }
         if(!file_exists($this->destino)){
-            echo "no existe";
-                if(!$this->crearCarpeta()){
-                    echo "pero no la crea";
-                    $this->error = SubirMultiple::ERROR_SIN_CARPETA;
-                    return false;
-                }
+            if(!$this->crearCarpeta()){
+                $this->error = SubirMultiple::ERROR_SIN_CARPETA;
+                $this->listaErrores['subida'] = SubirMultiple::ERROR_SIN_CARPETA;
+                return false;
             }
+        }
         $i=-1;
         $totalsubida=0;
+        $contador=0;
         foreach($archivos['name'] as $archivo){
             $i++;
             $totalsiguiente = $totalsubida + $archivos['size'][$i];
-            echo $totalsiguiente;
-            if($i>=$this->getCantidadMaxima()){
-                echo "estos son muchos";
+            if($contador>=$this->getCantidadMaxima()){
+                $this->listaErrores[$archivos['name'][$i]] = SubirMultiple::ERROR_NUM_MAX;
                 return false;
             }
             if($totalsiguiente >= $this->tamMaxTotal){
-                echo "este no cabe";
+                $this->listaErrores[$archivos['name'][$i]] = SubirMultiple::ERROR_TAM_TOTAL;
                 continue;
             }
             $partes = pathinfo($archivos["name"][$i]);
@@ -217,14 +249,17 @@ class SubirMultiple {
             $lugardestino="";
             if(!$this->isExtension($extension)){
                 $this->error = SubirMultiple::ERROR_EXT;
+                $this->listaErrores[$archivos['name'][$i]] = SubirMultiple::ERROR_EXT;
                 continue;
             }
             if(!$this->isTipo($archivos['type'][$i])){
                 $this->error = SubirMultiple::ERROR_TIPO;
+                $this->listaErrores[$archivos['name'][$i]] = SubirMultiple::ERROR_TIPO;
                 continue;
             }
             if(!$this->isTamanio($archivos['size'][$i])){
                 $this->error = SubirMultiple::ERROR_TAM;
+                $this->listaErrores[$archivos['name'][$i]] = SubirMultiple::ERROR_TAM;
                 continue;
             }
             if($this->accion == SubirMultiple::REEMPLAZAR){
@@ -239,13 +274,16 @@ class SubirMultiple {
             }elseif($this->accion == SubirMultiple::OMITIR){
                 $lugardestino = $this->destino.$nombre.".".$extension;
                 if (file_exists($lugardestino)) {
+                    $this->listaErrores[$archivos['name'][$i]] = SubirMultiple::ERROR_OMISION;
                     continue;
                 }
             }
             if(!move_uploaded_file($origen, $lugardestino)){
                 $this->error = SubirMultiple::ERROR_SUBIDA;
+                $this->listaErrores[$archivos['name'][$i]] = SubirMultiple::ERROR_SUBIDA;
             }
             $totalsubida += $archivos['size'][$i];
+            $contador++;
         }
     }
 }
