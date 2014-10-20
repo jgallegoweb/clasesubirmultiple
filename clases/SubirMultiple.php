@@ -8,7 +8,7 @@
 
 /**
  * Description of SubirMultiple
- * @version 0.6
+ * @version 1.0
  * @author Javier Gallego
  * @license http://URL sin licencia
  * @copyright (c) 2014, Javier Gallego
@@ -41,12 +41,24 @@ class SubirMultiple {
         $this->cantidadMax = 10; //numero archivos permitidos 10
         $this->listaErrores = Array();
     }
+    /**
+     * Comprueba que la extension está permitida
+     * @access private
+     * @param string $extension cadena con la extension a comprobar
+     * @return bool Devuelve true si está permitida la extension
+     * no se ha pasado y un array si el parametro es multiple.
+     */
     private function isExtension($extension){
         if (sizeof($this->extensiones) > 0 && !in_array($extension, $this->extensiones)) {
             return false;
         }
         return true;
     }
+    /**
+     * Añade una extensión a las permitidas
+     * @access public
+     * @param string $ext cadena con la nueva extensión
+     */
     public function addExtension($ext){
         if(is_array($ext)){
             $this->extensiones = array_merge($this->extensiones, $ext);
@@ -54,6 +66,11 @@ class SubirMultiple {
             $this->extensiones[] = $ext;
         }
     }
+    /**
+     * Establece las extensiones mediante un array borrando las anteriores
+     * @access public
+     * @param array|string $ext array o string con las extensiones
+     */
     public function setExtension($ext){
         if(is_array($ext)){
             $this->extensiones = $ext;
@@ -62,6 +79,11 @@ class SubirMultiple {
             $this->extensiones[] = $ext;
         }
     }
+    /**
+     * Añade un tipo MIME a los permitidos
+     * @access public
+     * @param string $tipo cadena con el nombre del tipo
+     */
     public function addTipo($tipo) {
         if (is_array($tipo)) {
             $this->tipos = array_merge($this->tipos, $tipo);
@@ -69,6 +91,11 @@ class SubirMultiple {
             $this->tipos[] = $tipo;
         }
     }
+    /**
+     * Establece los tipos MIME mediante un array borrando los anteriores
+     * @access public
+     * @param array|string $tipo array o string con los tipos permitidos
+     */
     public function setTipo($tipo){
         if(is_array($tipo)){
             $this->tipos = $tipo;
@@ -77,14 +104,27 @@ class SubirMultiple {
             $this->extensiones[] = $tipo;
         }
     }
+    /**
+     * Comprueba que los tipos MIME esten permitidos
+     * @access private
+     * @param string $tipo cadena con el tipo a comprobar
+     * @return bool Devuelve true si el tipo es permitido, false si no lo es
+     */
     private function isTipo($tipo){
         if (sizeof($this->tipos) > 0 && !in_array($tipo, $this->tipos)) {
             return false;
         }
         return true;
     }
+    /**
+     * Establece que se hará con los archivos repetidos
+     * @access public
+     * @param int $accion entero 0 si se quiere omitir, 1 si queremos renombrar
+     * 2 si queremos reemplazar 
+     * @return bool Devuelve true si se establecio correctamente
+     */
     public function setAcccion($accion){
-        if($accion==SubirMultiple::OMITIR){//usar las variables directamente?
+        if($accion==SubirMultiple::OMITIR){
             $this->accion = SubirMultiple::OMITIR;
         }elseif($accion==SubirMultiple::RENOMBRAR){
             $this->accion = SubirMultiple::RENOMBRAR;
@@ -95,6 +135,12 @@ class SubirMultiple {
         }
         return true;
     }
+    /**
+     * Crea la carpeta destino del directorio
+     * @access private
+     * @return bool Devuelve true si crea la carpeta con exito y false si no la
+     * crea o si no hemos extablecido que podamos crearla
+     */
     private function crearCarpeta(){ 
         if($this->crearCarpeta){
             if(mkdir($this->destino , 0774, true)){
@@ -107,21 +153,47 @@ class SubirMultiple {
         $this->listaErrores['carpeta'] = SubirMultiple::ERROR_CREAR_FALSE;
         return false;
     }
+    /**
+     * Establece si se pueden crear carpetas de destino si estas no existiesen
+     * @access public
+     * @param bool $var true para poder crear carpetas, false para no poder crear
+     */
     public function setCrearCarpeta($var){
         $this->crearCarpeta = $var;
     }
+    /**
+     * Establece el destino como aquel que le pasemos por parámetro
+     * @access public
+     * @param string $var cadena con el nombre del destino
+     */
     public function setDestino($var){
         $caracter = substr($var, -1);
         if ($caracter != "/")
             $var.="/";
         $this->destino = $var;
     }    
+    /**
+     * Establece el tamaño máximo por archivo individual
+     * @access public
+     * @param int $tam entero con el tamaño maximo
+     */
     public function setTamanio($tam){
         $this->tamMax = $tam;
     }
+    /**
+     * Establece el tamaño máximo total de toda la subida
+     * @access public
+     * @param int $tam entero con el tamaño máximo total
+     */
     public function setTamanioTotal($tam){
         $this->tamMaxTotal = $tam;
     }
+    /**
+     * Comprueba que el archivo cumpla las condiciones de tamaño
+     * @access private
+     * @param int $size tamaño del archivo a comprobar.
+     * @return bool Devuelve true si el archivo es válido y false si no lo es.
+     */
     private function isTamanio($size){
         if($this->tamMax >= $size){
             return true;
@@ -129,22 +201,49 @@ class SubirMultiple {
             return false;
         }
     }
+    /**
+     * Establece el número máximo de archivos que podemos subir de golpe.
+     * @access public
+     * @param int $cantidad entero con el máximo de archivos que podemos subir
+     */
     public function setCantidadMaxima($cantidad){
         $this->cantidadMax = $cantidad;
     }
-    private function getCantidadMaxima(){ //método util??
+    /**
+     * Nos dice la cantidad máxima de archivos que podemos subir
+     * @access private
+     * @return int Devuelve un entero con la cantidad
+     */
+    private function getCantidadMaxima(){
         return $this->cantidadMax;
     }
+    /**
+     * Nos dice si la cantidad de archivos subida es permitida
+     * @access private
+     * @return bool Devuelve true si la cantidad es permitida y false si no lo es
+     */
     private function isCantidad(){
         if($this->cantidadMax != NULL && $this->cantidadMax < $this->getNumeroArchivos()){
             return false;
         }
         return true;
     }
+    /**
+     * Establece el procedimiento a seguir en caso de excederse el tamaño o
+     * número máximos de archivos a subir
+     * @access public
+     * @param int $accion entero 0 si queremos omitir todoy 1 si queremos 
+     * omitir parte
+     */
     public function setAccionExcede($accion){
         $this->accionExcede = $accion;
         return true;
     }
+    /**
+     * Nos dice el tamaño total de los archivos enviados
+     * @access private
+     * @return int $total Devuelve una entero con el tamaño total de la subida
+     */
     private function getTamanioTotal(){
         $total = 0;
         $archivos = $_FILES[$this->inputname];
@@ -155,19 +254,41 @@ class SubirMultiple {
         }
         return $total;
     }
+    /**
+     * Devuelve el numero de archivos enviados
+     * @access private
+     * @return int Devuelve el número de archivos que estamos intentando subir
+     */
     private function getNumeroArchivos(){
         $archivos = $_FILES[$this->inputname];
         return sizeof($archivos['name']);
     }
+    /**
+     * Comprueba si el tamaño total de los archivos a subir es permitido
+     * @access private
+     * @return bool Devuelve true si el tamaño es permitido, false si no lo es
+     */
     private function isTamanioTotal(){
         if($this->tamMaxTotal >= $this->getTamanioTotal()){
             return true;
         }
         return false;
     }
+    /**
+     * Devuelve un error si lo hubiera (eficaz solo para subidas de un único fichero)
+     * @access public
+     * @return int $error devuelve el codigo de error que hubiera dado
+     * en ese momento
+     */
     public function getError(){
         return $this->error;
     }
+    /**
+     * Devuelve todos los codigos de error que se hubieran producido
+     * @access public
+     * @return string Devuelve una cadena con las parejas de valores archivo y
+     * mensaje de error
+     */
     public function getErrores(){
         $cadenaerror = "Resultado de la subida: <br />";
         foreach ($this->listaErrores as $key => $value) {
@@ -176,6 +297,11 @@ class SubirMultiple {
         }
         return $cadenaerror;
     }
+    /**
+     * Establece un nombre generico para las subidas.
+     * @access public
+     * @param string $nom cadena con el nuevo nombre
+     */
     public function setNuevoNombre($nom){
         $this->nuevoNombre = $nom;
         return true;
@@ -221,6 +347,7 @@ class SubirMultiple {
      */
     public function subir(){
         $archivos = $_FILES[$this->inputname];
+        //comprobaciones en caso de que queramos OMITIR_TODO en caso de ser mayor la subida
         if($this->accionExcede == SubirMultiple::OMITIR_TODO){
             if(!$this->isCantidad()){
                 $this->error = SubirMultiple::ERROR_NUM_MAX;
@@ -233,6 +360,7 @@ class SubirMultiple {
                 return false;
             }
         }
+        //comprobamos si existe el destino e intentamos crearlo si no existe
         if(!file_exists($this->destino)){
             if(!$this->crearCarpeta()){
                 $this->error = SubirMultiple::ERROR_SIN_CARPETA;
@@ -240,6 +368,10 @@ class SubirMultiple {
                 return false;
             }
         }
+        /*recorremos los archivos enviados mediante un foreach,
+         * dentro de el comprobaremos si cada archivo cumple las condiciones individuales
+         * y tambien si el subida es demasiado grande en total
+         */
         $i=-1;
         $totalsubida=0;
         $contador=0;
