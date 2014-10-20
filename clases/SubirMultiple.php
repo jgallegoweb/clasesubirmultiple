@@ -374,7 +374,7 @@ class SubirMultiple {
          */
         $i=-1;
         $totalsubida=0;
-        $contador=0;
+        $contador=1;
         foreach($archivos['name'] as $archivo){
             $i++;
             $totalsiguiente = $totalsubida + $archivos['size'][$i];
