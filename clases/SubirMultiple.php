@@ -16,7 +16,7 @@
  * Permite la subida de uno o varios ficheros simultaneamente.
  */
 class SubirMultiple {
-    private $inputname, $tamMax, $tamMaxTotal, $extensiones, $tipos, $accion, $destino, $crearCarpeta;
+    private $inputname, $tamMax, $tamMaxTotal, $extensiones, $tipos, $accion, $destino, $crearCarpeta, $nuevoNombre;
     private $cantidadMax, $accionExcede;
     private $error, $errorPHP, $listaErrores;
     
@@ -28,17 +28,17 @@ class SubirMultiple {
     
     function __construct($nombreinput) {
         $this->inputname = $nombreinput;
-        $this->tamMax = 1024*1024*2;
-        $this->tamMaxTotal = $this->tamMax*10;
+        $this->tamMax = 1024*1024*2; //2 MB por archivo por defecto
+        $this->tamMaxTotal = $this->tamMax*10; //20MB de subida total
         $this->extensiones = Array();
         $this->tipos = Array();
-        $this->accion = SubirMultiple::OMITIR;
-        $this->destino = "./";
-        $this->crearCarpeta = false;
+        $this->accion = SubirMultiple::OMITIR; //omitimos las subidas repetidas
+        $this->destino = "./"; //carpeta actual por defecto
+        $this->crearCarpeta = false; //no podemos crear carpetas
         $this->error = SubirMultiple::NO_ERROR;
         $this->errorPHP = UPLOAD_ERR_OK;
-        $this->accionExcede = SubirMultiple::OMITIR_TODO;
-        $this->cantidadMax = 10;
+        $this->accionExcede = SubirMultiple::OMITIR_TODO; //si algún archivo sobrepasa tamaño o numero no se sube ninguno
+        $this->cantidadMax = 10; //numero archivos permitidos 10
         $this->listaErrores = Array();
     }
     private function isExtension($extension){
@@ -97,7 +97,7 @@ class SubirMultiple {
     }
     private function crearCarpeta(){ 
         if($this->crearCarpeta){
-            if(mkdir($this->destino , 0774, true)){ //pork no funcionan la clase configuracion??
+            if(mkdir($this->destino , 0774, true)){
                 return true;
             }else{
                 return false;
@@ -132,7 +132,7 @@ class SubirMultiple {
     public function setCantidadMaxima($cantidad){
         $this->cantidadMax = $cantidad;
     }
-    private function getCantidadMaxima(){ //metodo publico??
+    private function getCantidadMaxima(){ //método util??
         return $this->cantidadMax;
     }
     private function isCantidad(){
@@ -169,13 +169,25 @@ class SubirMultiple {
         return $this->error;
     }
     public function getErrores(){
-        echo "Resultado de la subida: <br />";
+        $cadenaerror = "Resultado de la subida: <br />";
         foreach ($this->listaErrores as $key => $value) {
-            echo $key." --- ".$this->getMensajeError($value);
-            echo "<br />";
+            $cadenaerror .= $key." --- ".$this->getMensajeError($value);
+            $cadenaerror .= "<br />";
         }
+        return $cadenaerror;
     }
-    public function getMensajeError($codigoerror){
+    public function setNuevoNombre($nom){
+        $this->nuevoNombre = $nom;
+        return true;
+    }
+    /**
+     * Devuelve un string con el significado de un código de error pasado
+     * por parámetro.
+     * @access private
+     * @param int $codigoerror entero con el número del error
+     * @return string Devuelve una cadena con el significado del error
+     */
+    private function getMensajeError($codigoerror){
         switch($codigoerror){
             case SubirMultiple::NO_ERROR:
                 return "No se han detectado errores";
@@ -202,10 +214,10 @@ class SubirMultiple {
         }
          
     }
-    /*
-     * set nombre comun a la subida???
-     * numeros por defecto sin inicializar
-     * 
+    /**
+     * Sube el archivo o archivos enviados en el formulario según la
+     * configuración especificada.
+     * @access public
      */
     public function subir(){
         $archivos = $_FILES[$this->inputname];
@@ -244,7 +256,12 @@ class SubirMultiple {
             }
             $partes = pathinfo($archivos["name"][$i]);
             $extension = $partes['extension'];
-            $nombre = $partes['filename'];
+            $nombre="";
+            if($this->nuevoNombre=="" || $this->nuevoNombre==NULL){
+                $nombre = $partes['filename'];
+            }else{
+                $nombre = $this->nuevoNombre;
+            }
             $origen=$archivos['tmp_name'][$i];
             $lugardestino="";
             if(!$this->isExtension($extension)){
@@ -284,6 +301,7 @@ class SubirMultiple {
             }
             $totalsubida += $archivos['size'][$i];
             $contador++;
+            $this->listaErrores[$archivos['name'][$i]] = SubirMultiple::NO_ERROR;
         }
     }
 }

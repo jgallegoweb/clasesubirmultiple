@@ -11,9 +11,7 @@ and open the template in the editor.
     </head>
     <body>
         <form action="subirmas.php" method="POST" enctype="multipart/form-data">
-            <input type="text" name="usuario" value="" />
-            <input type="file" name="ficheros[]" value="" multiple="" />
-            <input type="submit" value="subir" />
+            <label>Seleccione los archivos a subir: </label><input type="file" name="ficheros[]" value="" multiple="" /> <input type="submit" value="Subir" />
         </form>
     </body>
 </html>

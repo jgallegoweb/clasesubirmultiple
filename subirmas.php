@@ -13,31 +13,24 @@ and open the template in the editor.
         <?php
             require_once 'clases/SubirMultiple.php';
             
-            $subir = new SubirMultiple("ficheros");
-            $subir->addExtension("txt");
-            $subir->addExtension("jpg"); //no funcionan los archivos .jpg
+            $subir = new SubirMultiple("ficheros"); //creamos un objeto de la clase SubirMultiple
+            
+            $subir->addExtension("txt"); //Añadimos varias extensiones permitidas
+            $subir->addExtension("jpg");
             $subir->addExtension("png");
-            $subir->setAcccion(1);
-            $subir->setAccionExcede(1);
-            $subir->setCrearCarpeta(true);
-            $subir->setDestino("carpetita");
+            $subir->addTipo("text/plain"); //Añadimos los tipos MIME de las extensiones anteriores
+            $subir->addTipo("image/jpeg");
+            $subir->addTipo("image/png");
+            $subir->setAcccion(1); //renombramos los archivos en caso de existir
+            $subir->setAccionExcede(1); //subimos los archivos que si cumplan las condiciones
+            $subir->setCrearCarpeta(true); //creamos el directorio de destino si no existe
+            $subir->setDestino("carpetita"); //seleccionamos el destino
+            $subir->subir(); //subimos los archivos
+            $subir->setTamanio(1024*1024*5);
+            $subir->setCantidadMaxima(4);
             $subir->subir();
-            $subir->getErrores();
-            echo "<br /> error_".$subir->getError();
-            /*$archivos = $_FILES['ficheros'];
-            $tope=  count($archivos['name']);
-            echo $tope;
-            $i=0;
-            foreach($archivos['name'] as $clave => $archivo){
-                
-                if(move_uploaded_file($archivos['tmp_name'][$i], "./".$archivos['name'][$i])){
-                    echo "true";
-                }else{
-                    echo "false";
-                }
-                echo "subido ".$archivos['name'][$i]."<br/>";
-                $i++;
-            }*/
+            echo $subir->getErrores(); //imprime los errores.
+            
         ?>
     </body>
 </html>
